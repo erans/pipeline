@@ -5,13 +5,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/erans/pipeline/gcloud"
-
 	logrus "gopkg.in/Sirupsen/logrus.v0"
 )
 
 type testHandler struct {
-	p *gcloud.PubSubPipeline
+	p Handler
 }
 
 func (h *testHandler) Init(p Pipeline) {
@@ -38,7 +36,8 @@ func TestPubSubPipeline(t *testing.T) {
 	Log.Out = os.Stderr
 	Log.Level = logrus.DebugLevel
 
-	p := NewPubSubPipeline(projectID, queueName, "", subscriptionName, th)
+	var p Handler
+	p = NewPubSubPipeline(projectID, queueName, "", subscriptionName, th)
 	p.CreateSubscription = true
 	p.CreateTopics = true
 
