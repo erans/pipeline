@@ -5,11 +5,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/erans/pipeline/gcloud"
+
 	logrus "gopkg.in/Sirupsen/logrus.v0"
 )
 
 type testHandler struct {
-	p *PubSubPipeline
+	p *gcloud.PubSubPipeline
 }
 
 func (h *testHandler) Init(p Pipeline) {

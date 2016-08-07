@@ -1,11 +1,20 @@
-package pipeline
+package gcloud
 
 import (
 	"fmt"
 	"time"
 
+	logrus "gopkg.in/Sirupsen/logrus.v0"
+
+	"github.com/erans/pipeline"
+
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
+)
+
+var (
+	// Log allows to set a logger to debug the library
+	Log *logrus.Logger
 )
 
 // PubSubPipeline is the pipeline for use with Google Compute's PubSub
@@ -14,7 +23,7 @@ type PubSubPipeline struct {
 	queue            string
 	resultQueue      string
 	subscriptionName string
-	handler          Handler
+	handler          pipeline.Handler
 
 	CreateTopics       bool
 	CreateSubscription bool
@@ -25,7 +34,7 @@ type PubSubPipeline struct {
 }
 
 // NewPubSubPipeline creates a new Google PubSub based pipeline
-func NewPubSubPipeline(projID string, queue string, resultQueue string, subscriptionName string, handler Handler) *PubSubPipeline {
+func NewPubSubPipeline(projID string, queue string, resultQueue string, subscriptionName string, handler pipeline.Handler) *PubSubPipeline {
 	return &PubSubPipeline{
 		projID:           projID,
 		queue:            queue,
@@ -91,8 +100,8 @@ func getOrCreateSubscription(ctx context.Context, client *pubsub.Client, name st
 	return subscription
 }
 
-func getPipelineMessage(msg *pubsub.Message) *Message {
-	return &Message{
+func getPipelineMessage(msg *pubsub.Message) *pipeline.Message {
+	return &pipeline.Message{
 		ID:              msg.ID,
 		Data:            msg.Data,
 		Attributes:      msg.Attributes,
@@ -138,7 +147,7 @@ func (p *PubSubPipeline) Start() error {
 }
 
 // AckMessage acknolwedges the messages recieved to makring it as processed.
-func (p *PubSubPipeline) AckMessage(message *Message) error {
+func (p *PubSubPipeline) AckMessage(message *pipeline.Message) error {
 	if message.InternalMessage == nil {
 		return fmt.Errorf("Message's internal message is nil")
 	}
