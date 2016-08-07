@@ -12,6 +12,7 @@ var (
 // Pipeline interface to communicate with various implementations
 type Pipeline interface {
 	Start() error
+	Stop()
 	AckMessage(message *Message) error
 	PostMessage(outboundTopciName string, message *Message) error
 }

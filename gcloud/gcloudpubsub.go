@@ -33,6 +33,7 @@ type PubSubPipeline struct {
 	subscription     *pubsub.Subscription
 	client           *pubsub.Client
 	ctx              context.Context
+	it               *pubsub.Iterator
 }
 
 // NewPubSubPipeline creates a new Google PubSub based pipeline
@@ -127,13 +128,13 @@ func (p *PubSubPipeline) Start() error {
 
 	p.subscription = getOrCreateSubscription(p.ctx, p.client, p.subscriptionName, p.queueTopic, p.CreateSubscription)
 
-	it, err := p.subscription.Pull(p.ctx)
+	p.it, err = p.subscription.Pull(p.ctx)
 	if err != nil {
 		return err
 	}
 
 	for {
-		msg, err := it.Next()
+		msg, err := p.it.Next()
 		if err == pubsub.Done {
 			break
 		}
@@ -145,6 +146,11 @@ func (p *PubSubPipeline) Start() error {
 	}
 
 	return nil
+}
+
+// Stop shuts down the iterator
+func (p *PubSubPipeline) Stop() {
+	p.it.Stop()
 }
 
 // AckMessage acknolwedges the messages recieved to makring it as processed.
