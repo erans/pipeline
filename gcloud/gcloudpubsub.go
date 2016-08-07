@@ -31,6 +31,8 @@ type PubSubPipeline struct {
 	queueTopic       *pubsub.Topic
 	resultQueueTopic *pubsub.Topic
 	subscription     *pubsub.Subscription
+	client           *pubsub.Client
+	ctx              context.Context
 }
 
 // NewPubSubPipeline creates a new Google PubSub based pipeline
@@ -112,21 +114,20 @@ func getPipelineMessage(msg *pubsub.Message) *pipeline.Message {
 // Start starts the process of getting messages from pubsub
 func (p *PubSubPipeline) Start() error {
 	var err error
-	var client *pubsub.Client
-	ctx := context.Background()
-	client, err = pubsub.NewClient(ctx, p.projID)
+	p.ctx = context.Background()
+	p.client, err = pubsub.NewClient(p.ctx, p.projID)
 	if err != nil {
 		return fmt.Errorf("Failed to create new pubsub client")
 	}
 
-	p.queueTopic = getOrCreateTopic(ctx, client, p.queue, p.CreateTopics)
+	p.queueTopic = getOrCreateTopic(p.ctx, p.client, p.queue, p.CreateTopics)
 	if p.resultQueue != "" {
-		p.resultQueueTopic = getOrCreateTopic(ctx, client, p.resultQueue, p.CreateTopics)
+		p.resultQueueTopic = getOrCreateTopic(p.ctx, p.client, p.resultQueue, p.CreateTopics)
 	}
 
-	p.subscription = getOrCreateSubscription(ctx, client, p.subscriptionName, p.queueTopic, p.CreateSubscription)
+	p.subscription = getOrCreateSubscription(p.ctx, p.client, p.subscriptionName, p.queueTopic, p.CreateSubscription)
 
-	it, err := p.subscription.Pull(ctx)
+	it, err := p.subscription.Pull(p.ctx)
 	if err != nil {
 		return err
 	}
@@ -153,5 +154,20 @@ func (p *PubSubPipeline) AckMessage(message *pipeline.Message) error {
 	}
 	message.InternalMessage.(*pubsub.Message).Done(true)
 
+	return nil
+}
+
+func pipelineMessageToPubSubMessage(message *pipeline.Message) *pubsub.Message {
+	return &pubsub.Message{
+		Attributes: message.Attributes,
+		Data:       message.Data,
+	}
+}
+
+// PostMessage allows posting a message to another queue, usually for further processing
+func (p *PubSubPipeline) PostMessage(outboundTopciName string, message *pipeline.Message) error {
+	if _, err := p.resultQueueTopic.Publish(p.ctx, pipelineMessageToPubSubMessage(message)); err != nil {
+		return err
+	}
 	return nil
 }
