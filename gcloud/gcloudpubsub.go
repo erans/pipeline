@@ -19,10 +19,10 @@ var (
 
 // PubSubPipeline is the pipeline for use with Google Compute's PubSub
 type PubSubPipeline struct {
-	projID           string
-	queue            string
-	resultQueue      string
-	subscriptionName string
+	projID           *string
+	queue            *string
+	resultQueue      *string
+	subscriptionName *string
 	handler          pipeline.Handler
 
 	CreateTopics       bool
@@ -37,7 +37,7 @@ type PubSubPipeline struct {
 }
 
 // NewPubSubPipeline creates a new Google PubSub based pipeline
-func NewPubSubPipeline(projID string, queue string, resultQueue string, subscriptionName string, handler pipeline.Handler) *PubSubPipeline {
+func NewPubSubPipeline(projID *string, queue *string, resultQueue *string, subscriptionName *string, handler pipeline.Handler) *PubSubPipeline {
 	return &PubSubPipeline{
 		projID:           projID,
 		queue:            queue,
@@ -50,14 +50,14 @@ func NewPubSubPipeline(projID string, queue string, resultQueue string, subscrip
 	}
 }
 
-func getOrCreateTopic(ctx context.Context, client *pubsub.Client, topicName string, createIfMissing bool) *pubsub.Topic {
+func getOrCreateTopic(ctx context.Context, client *pubsub.Client, topicName *string, createIfMissing bool) *pubsub.Topic {
 	var topic *pubsub.Topic
 	var err error
 	var exists bool
 
-	topic = client.Topic(topicName)
+	topic = client.Topic(*topicName)
 	if exists, err = topic.Exists(ctx); !exists && createIfMissing {
-		if topic, err = client.NewTopic(ctx, topicName); err == nil {
+		if topic, err = client.NewTopic(ctx, *topicName); err == nil {
 			if Log != nil {
 				Log.Debugf("Creating topic: %s\n", topicName)
 			}
@@ -72,18 +72,18 @@ func getOrCreateTopic(ctx context.Context, client *pubsub.Client, topicName stri
 	return topic
 }
 
-func getOrCreateSubscription(ctx context.Context, client *pubsub.Client, name string, topic *pubsub.Topic, createIfMissing bool) *pubsub.Subscription {
+func getOrCreateSubscription(ctx context.Context, client *pubsub.Client, name *string, topic *pubsub.Topic, createIfMissing bool) *pubsub.Subscription {
 	var subscription *pubsub.Subscription
 	var err error
 	var exists bool
 
-	subscription = client.Subscription(name)
+	subscription = client.Subscription(*name)
 	if exists, err = subscription.Exists(ctx); !exists && createIfMissing {
 		if err != nil {
 			return nil
 		}
 
-		if subscription, err = client.NewSubscription(ctx, name, topic, 120*time.Second, nil); err == nil {
+		if subscription, err = client.NewSubscription(ctx, *name, topic, 120*time.Second, nil); err == nil {
 			return subscription
 		}
 
@@ -116,13 +116,13 @@ func getPipelineMessage(msg *pubsub.Message) *pipeline.Message {
 func (p *PubSubPipeline) Start() error {
 	var err error
 	p.ctx = context.Background()
-	p.client, err = pubsub.NewClient(p.ctx, p.projID)
+	p.client, err = pubsub.NewClient(p.ctx, *p.projID)
 	if err != nil {
 		return fmt.Errorf("Failed to create new pubsub client")
 	}
 
 	p.queueTopic = getOrCreateTopic(p.ctx, p.client, p.queue, p.CreateTopics)
-	if p.resultQueue != "" {
+	if p.resultQueue != nil {
 		p.resultQueueTopic = getOrCreateTopic(p.ctx, p.client, p.resultQueue, p.CreateTopics)
 	}
 
