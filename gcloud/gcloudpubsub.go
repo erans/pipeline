@@ -59,14 +59,14 @@ func getOrCreateTopic(ctx context.Context, client *pubsub.Client, topicName *str
 	if exists, err = topic.Exists(ctx); !exists && createIfMissing {
 		if topic, err = client.NewTopic(ctx, *topicName); err == nil {
 			if Log != nil {
-				Log.Debugf("Creating topic: %s\n", topicName)
+				Log.Debugf("Creating topic: %s\n", *topicName)
 			}
 			return topic
 		}
 	}
 
 	if Log != nil {
-		Log.Debugf("Using topic: %s", topicName)
+		Log.Debugf("Using topic: %s", *topicName)
 	}
 
 	return topic
@@ -92,12 +92,12 @@ func getOrCreateSubscription(ctx context.Context, client *pubsub.Client, name *s
 		}
 
 		if Log != nil {
-			Log.Debugf("Creating subscription: %s\n", name)
+			Log.Debugf("Creating subscription: %s\n", *name)
 		}
 	}
 
 	if Log != nil {
-		Log.Debugf("Using subscription: %s", name)
+		Log.Debugf("Using subscription: %s", *name)
 	}
 
 	return subscription

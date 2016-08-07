@@ -1,22 +1,24 @@
-package pipeline
+package gcloud
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/erans/pipeline"
+
 	logrus "gopkg.in/Sirupsen/logrus.v0"
 )
 
 type testHandler struct {
-	p Handler
+	p pipeline.Pipeline
 }
 
-func (h *testHandler) Init(p Pipeline) {
+func (h *testHandler) Init(p pipeline.Pipeline) {
 	//h.p = p
 }
 
-func (h *testHandler) Handle(message *Message) error {
+func (h *testHandler) Handle(message *pipeline.Message) error {
 	fmt.Printf("Got Msg: %s %v\n", message.ID, message)
 	h.p.AckMessage(message)
 	fmt.Printf("Message Acked: %s %v\n", message.ID, message)
@@ -36,10 +38,13 @@ func TestPubSubPipeline(t *testing.T) {
 	Log.Out = os.Stderr
 	Log.Level = logrus.DebugLevel
 
-	var p Handler
-	p = NewPubSubPipeline(projectID, queueName, "", subscriptionName, th)
-	p.CreateSubscription = true
-	p.CreateTopics = true
+	var p pipeline.Pipeline
+	p = NewPubSubPipeline(&projectID, &queueName, nil, &subscriptionName, th)
+	original, ok := p.(*PubSubPipeline)
+	if ok {
+		original.CreateSubscription = true
+		original.CreateTopics = true
+	}
 
 	th.p = p
 
