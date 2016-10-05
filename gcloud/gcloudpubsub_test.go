@@ -28,7 +28,7 @@ func (h *testHandler) Handle(message *pipeline.Message) error {
 func TestPubSubPipeline(t *testing.T) {
 	queueName := "test123"
 	subscriptionName := "test.test123"
-	projectID := "genuine-space-390"
+	projectID := "test-test-1"
 
 	th := &testHandler{}
 
